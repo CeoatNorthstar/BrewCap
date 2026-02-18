@@ -4,13 +4,30 @@ set -e
 APP_NAME="BrewCap"
 DMG_NAME="${APP_NAME}.dmg"
 DMG_TEMP="${APP_NAME}_temp.dmg"
-VOL_NAME="${APP_NAME}"
+VOL_NAME="Install ${APP_NAME}"
 APP_PATH="/tmp/BrewCapExport/${APP_NAME}.app"
 BG_IMG="/tmp/dmg_background.png"
+BG_IMG_2X="/tmp/dmg_background@2x.png"
 OUTPUT_PATH="${HOME}/Desktop/${DMG_NAME}"
 STAGING="/tmp/BrewCapDMGStaging"
 
+# Window dimensions
+WIN_W=540
+WIN_H=380
+WIN_X=200
+WIN_Y=120
+
 echo "=== Creating Custom DMG ==="
+
+# Ensure app exists
+if [ ! -d "$APP_PATH" ]; then
+    echo "ERROR: App not found at $APP_PATH"
+    exit 1
+fi
+
+# Flush icon cache so Finder picks up the new icon
+/System/Library/Frameworks/CoreServices.framework/Versions/Current/Frameworks/LaunchServices.framework/Versions/Current/Support/lsregister -f -R -trusted "$APP_PATH" 2>/dev/null || true
+touch "$APP_PATH"
 
 # Clean up
 rm -rf "$STAGING" "$OUTPUT_PATH"
@@ -20,8 +37,11 @@ mkdir -p "$STAGING/.background"
 cp -R "$APP_PATH" "$STAGING/"
 ln -sf /Applications "$STAGING/Applications"
 
-# Copy background image
+# Copy background images
 cp "$BG_IMG" "$STAGING/.background/background.png"
+if [ -f "$BG_IMG_2X" ]; then
+    cp "$BG_IMG_2X" "$STAGING/.background/background@2x.png"
+fi
 
 # Calculate DMG size (app size + 10MB padding)
 APP_SIZE_KB=$(du -sk "$STAGING" | cut -f1)
@@ -44,7 +64,7 @@ echo "Mounted at device: $DEVICE"
 
 sleep 2
 
-# Use AppleScript to customize the DMG window
+# Customize with AppleScript
 echo "Applying window customization..."
 osascript <<EOF
 tell application "Finder"
@@ -53,18 +73,16 @@ tell application "Finder"
         set current view of container window to icon view
         set toolbar visible of container window to false
         set statusbar visible of container window to false
-        set bounds of container window to {100, 100, 760, 500}
+        set bounds of container window to {${WIN_X}, ${WIN_Y}, $((WIN_X + WIN_W)), $((WIN_Y + WIN_H))}
         
         set theViewOptions to icon view options of container window
         set arrangement of theViewOptions to not arranged
-        set icon size of theViewOptions to 80
+        set icon size of theViewOptions to 100
         set background picture of theViewOptions to file ".background:background.png"
         
-        -- Position the app icon (left side)
-        set position of item "${APP_NAME}.app" of container window to {165, 200}
-        
-        -- Position the Applications alias (right side)  
-        set position of item "Applications" of container window to {495, 200}
+        -- Center icons vertically, spread horizontally
+        set position of item "${APP_NAME}.app" of container window to {150, 190}
+        set position of item "Applications" of container window to {390, 190}
         
         close
         open

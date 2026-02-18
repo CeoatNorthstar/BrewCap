@@ -16,6 +16,7 @@
 		A11C101EAAAA000100000001 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11C101FAAAA000100000001 /* main.swift */; };
 		A11C1030AAAA000100000001 /* smc in Resources */ = {isa = PBXBuildFile; fileRef = A11C1031AAAA000100000001 /* smc */; };
 		A11C1032AAAA000100000001 /* AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = A11C1033AAAA000100000001 /* AppIcon.icns */; };
+		A11C1034AAAA000100000001 /* ReportGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11C1035AAAA000100000001 /* ReportGenerator.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -31,6 +32,7 @@
 		A11C101FAAAA000100000001 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		A11C1031AAAA000100000001 /* smc */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = smc; sourceTree = "<group>"; name = smc; };
 		A11C1033AAAA000100000001 /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
+		A11C1035AAAA000100000001 /* ReportGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportGenerator.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -66,6 +68,7 @@
 				A11C1008AAAA000100000001 /* BrewCap.entitlements */,
 				A11C1031AAAA000100000001 /* smc */,
 				A11C1033AAAA000100000001 /* AppIcon.icns */,
+				A11C1035AAAA000100000001 /* ReportGenerator.swift */,
 			);
 			path = BrewCap;
 			sourceTree = "<group>";
@@ -155,6 +158,7 @@
 				A11C101AAAAA000100000001 /* BatteryManager.swift in Sources */,
 				A11C101CAAAA000100000001 /* SMCClient.swift in Sources */,
 				A11C101EAAAA000100000001 /* main.swift in Sources */,
+				A11C1034AAAA000100000001 /* ReportGenerator.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

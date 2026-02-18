@@ -2,10 +2,11 @@
 set -e
 
 APP_NAME="BrewCap"
-DMG_NAME="${APP_NAME}.dmg"
+APP_PATH="/tmp/BrewCapExport/${APP_NAME}.app"
+VERSION=$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" "${APP_PATH}/Contents/Info.plist" 2>/dev/null || echo "1.0")
+DMG_NAME="${APP_NAME}-${VERSION}.dmg"
 DMG_TEMP="${APP_NAME}_temp.dmg"
 VOL_NAME="Install ${APP_NAME}"
-APP_PATH="/tmp/BrewCapExport/${APP_NAME}.app"
 BG_IMG="/tmp/dmg_background.png"
 BG_IMG_2X="/tmp/dmg_background@2x.png"
 OUTPUT_PATH="${HOME}/Desktop/${DMG_NAME}"

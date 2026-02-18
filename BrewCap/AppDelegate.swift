@@ -293,7 +293,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let versionItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
         let versionStr = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
         versionItem.attributedTitle = NSAttributedString(
-            string: "v\(versionStr)  ·  ⌘⇧B toggle sailing",
+            string: "v\(versionStr)  ·  ⌘⇧B sailing  ·  ⌘D display",
             attributes: [
                 .font: NSFont.monospacedSystemFont(ofSize: 10, weight: .regular),
                 .foregroundColor: NSColor.tertiaryLabelColor
@@ -519,7 +519,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let hostingView = NSHostingView(rootView: aboutView)
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 320, height: 280),
+            contentRect: NSRect(x: 0, y: 0, width: 320, height: 320),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
@@ -559,40 +559,93 @@ extension AppDelegate: NSWindowDelegate {
     }
 }
 
-// MARK: - Feature 24: About View
+// MARK: - About View
 struct AboutView: View {
+    @Environment(\.colorScheme) var colorScheme
+
     var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "cup.and.saucer.fill")
-                .font(.system(size: 48))
-                .foregroundStyle(.brown)
+        VStack(spacing: 0) {
+            // Icon + Title
+            VStack(spacing: 10) {
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.brown.opacity(0.3), Color.brown.opacity(0.1)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 72, height: 72)
 
-            Text("BrewCap")
-                .font(.system(size: 22, weight: .bold, design: .rounded))
+                    Image(systemName: "cup.and.saucer.fill")
+                        .font(.system(size: 34, weight: .medium))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [.brown, Color(red: 0.6, green: 0.4, blue: 0.2)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                }
 
-            let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
-            let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
-            Text("Version \(version) (Build \(build))")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                Text("BrewCap")
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
 
-            Divider().frame(width: 200)
-
-            VStack(spacing: 4) {
-                Text("Battery Health & Charge Management")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text("60 features · Hardware-level SMC control")
-                    .font(.caption)
+                let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+                let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
+                Text("Version \(version) · Build \(build)")
+                    .font(.system(size: 11, weight: .medium, design: .monospaced))
                     .foregroundStyle(.secondary)
             }
+            .padding(.top, 24)
 
-            Text("☕ Keep your battery fresh")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-                .padding(.top, 8)
+            Divider()
+                .padding(.horizontal, 40)
+                .padding(.vertical, 14)
+
+            // Feature highlights
+            VStack(spacing: 8) {
+                aboutFeatureRow(icon: "bolt.shield.fill", color: .blue, text: "Hardware-level SMC charge control")
+                aboutFeatureRow(icon: "chart.line.downtrend.xyaxis", color: .green, text: "Battery health & capacity tracking")
+                aboutFeatureRow(icon: "bell.badge.fill", color: .orange, text: "Smart alerts & power analytics")
+            }
+            .padding(.horizontal, 24)
+
+            Spacer()
+
+            // Footer
+            VStack(spacing: 6) {
+                Link(destination: URL(string: "https://github.com/CeoatNorthstar/BrewCap")!) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "link")
+                            .font(.system(size: 9))
+                        Text("github.com/CeoatNorthstar/BrewCap")
+                            .font(.system(size: 10, weight: .medium))
+                    }
+                    .foregroundStyle(.blue.opacity(0.8))
+                }
+
+                Text("© 2026 Northstar · Made with ☕")
+                    .font(.system(size: 9))
+                    .foregroundStyle(.quaternary)
+            }
+            .padding(.bottom, 18)
         }
-        .padding(30)
-        .frame(width: 320, height: 280)
+        .frame(width: 320, height: 320)
+    }
+
+    private func aboutFeatureRow(icon: String, color: Color, text: String) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: icon)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(color)
+                .frame(width: 20)
+            Text(text)
+                .font(.system(size: 11.5))
+                .foregroundStyle(.secondary)
+            Spacer()
+        }
     }
 }
+

@@ -15,6 +15,7 @@
 		A11C101CAAAA000100000001 /* SMCClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11C101DAAAA000100000001 /* SMCClient.swift */; };
 		A11C101EAAAA000100000001 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11C101FAAAA000100000001 /* main.swift */; };
 		A11C1030AAAA000100000001 /* smc in Resources */ = {isa = PBXBuildFile; fileRef = A11C1031AAAA000100000001 /* smc */; };
+		A11C1032AAAA000100000001 /* AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = A11C1033AAAA000100000001 /* AppIcon.icns */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -29,6 +30,7 @@
 		A11C101DAAAA000100000001 /* SMCClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SMCClient.swift; sourceTree = "<group>"; };
 		A11C101FAAAA000100000001 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		A11C1031AAAA000100000001 /* smc */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = smc; sourceTree = "<group>"; name = smc; };
+		A11C1033AAAA000100000001 /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -63,6 +65,7 @@
 				A11C1007AAAA000100000001 /* Info.plist */,
 				A11C1008AAAA000100000001 /* BrewCap.entitlements */,
 				A11C1031AAAA000100000001 /* smc */,
+				A11C1033AAAA000100000001 /* AppIcon.icns */,
 			);
 			path = BrewCap;
 			sourceTree = "<group>";
@@ -135,6 +138,7 @@
 			files = (
 				A11C1005AAAA000100000001 /* Assets.xcassets in Resources */,
 				A11C1030AAAA000100000001 /* smc in Resources */,
+				A11C1032AAAA000100000001 /* AppIcon.icns in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

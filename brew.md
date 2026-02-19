@@ -60,7 +60,7 @@ mkdir Casks
 cat > Casks/brewcap.rb << 'EOF'
 cask "brewcap" do
   version "1.0"
-  sha256 "PASTE_YOUR_SHA256_HERE"
+  sha256 "534208e38e6fd743903420a830ab361ce1af5397ea707e85c286afa74a635d71"
 
   url "https://github.com/CeoatNorthstar/BrewCap/releases/download/v#{version}/BrewCap-#{version}.dmg"
   name "BrewCap"

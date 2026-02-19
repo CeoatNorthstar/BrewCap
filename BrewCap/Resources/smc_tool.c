@@ -1,3 +1,10 @@
+//
+//  smc_tool.c
+//  BrewCap
+//
+//  Copyright (c) 2026 NorthStars Industries. All rights reserved.
+//
+
 /*
  * Apple System Management Control (SMC) Tool
  * Based on smcFanControl by devnull / Michael Wilber

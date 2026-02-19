@@ -1,3 +1,10 @@
+//
+//  BrewCapApp.swift
+//  BrewCap
+//
+//  Copyright (c) 2026 NorthStars Industries. All rights reserved.
+//
+
 import SwiftUI
 
 struct BrewCapApp: App {

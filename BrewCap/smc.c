@@ -1,3 +1,10 @@
+//
+//  smc.c
+//  BrewCap
+//
+//  Copyright (c) 2026 NorthStars Industries. All rights reserved.
+//
+
 #include "smc.h"
 #include <CoreFoundation/CoreFoundation.h>
 #include <IOKit/IOKitLib.h>

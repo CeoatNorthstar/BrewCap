@@ -1,3 +1,10 @@
+//
+//  MainWindowView.swift
+//  BrewCap
+//
+//  Copyright (c) 2026 NorthStars Industries. All rights reserved.
+//
+
 import SwiftUI
 import ServiceManagement
 

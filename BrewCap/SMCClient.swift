@@ -1,3 +1,10 @@
+//
+//  SMCClient.swift
+//  BrewCap
+//
+//  Copyright (c) 2026 NorthStars Industries. All rights reserved.
+//
+
 import Foundation
 
 /// Manages the bundled `smc` binary for hardware charging control.

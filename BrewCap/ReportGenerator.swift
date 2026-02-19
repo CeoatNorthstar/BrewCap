@@ -1,3 +1,10 @@
+//
+//  ReportGenerator.swift
+//  BrewCap
+//
+//  Copyright (c) 2026 NorthStars Industries. All rights reserved.
+//
+
 import Foundation
 
 // Feature 21: Export Battery Report

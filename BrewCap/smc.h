@@ -1,3 +1,10 @@
+//
+//  smc.h
+//  BrewCap
+//
+//  Copyright (c) 2026 NorthStars Industries. All rights reserved.
+//
+
 #ifndef smc_h
 #define smc_h
 

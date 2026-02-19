@@ -1,4 +1,11 @@
 #!/bin/bash
+#
+#  create_dmg.sh
+#  BrewCap
+#
+#  Copyright (c) 2026 NorthStars Industries. All rights reserved.
+#
+
 set -e
 
 APP_NAME="BrewCap"

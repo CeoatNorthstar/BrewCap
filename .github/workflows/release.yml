@@ -1,0 +1,129 @@
+name: Release BrewCap
+
+# Automatically builds, packages, and uploads a DMG whenever a GitHub Release is published.
+# The release tag must follow the format: v1.2.3  (leading "v" is stripped to get the version string)
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build-and-upload:
+    name: Build & Upload DMG
+    runs-on: macos-latest
+
+    permissions:
+      contents: write   # required to upload release assets
+
+    steps:
+      # ── 1. Check out the exact commit the release points to ──────────────────
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── 2. Derive the version string from the release tag ────────────────────
+      - name: Set version from tag
+        id: version
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          VERSION="${TAG#v}"      # strip leading "v"
+          echo "TAG=$TAG"         >> "$GITHUB_OUTPUT"
+          echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Releasing version: $VERSION (tag: $TAG)"
+
+      # ── 3. Update Info.plist with the release version ────────────────────────
+      - name: Update Info.plist version
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          # Build number: sum the semantic components into a single integer
+          # Works for 1.2.3 → 10203, 1.0 → 10000, 2.0.1 → 20001
+          BUILD=$(python3 -c "
+          parts = '${VERSION}'.split('.')
+          parts = (parts + ['0', '0', '0'])[:3]
+          print(int(parts[0]) * 10000 + int(parts[1]) * 100 + int(parts[2]))
+          ")
+          /usr/libexec/PlistBuddy \
+            -c "Set :CFBundleShortVersionString $VERSION" \
+            BrewCap/Info.plist
+          /usr/libexec/PlistBuddy \
+            -c "Set :CFBundleVersion $BUILD" \
+            BrewCap/Info.plist
+          echo "Info.plist updated → version=$VERSION build=$BUILD"
+
+      # ── 4. Update Xcode project MARKETING_VERSION & CURRENT_PROJECT_VERSION ──
+      - name: Update Xcode project version
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          BUILD=$(python3 -c "
+          parts = '${VERSION}'.split('.')
+          parts = (parts + ['0', '0', '0'])[:3]
+          print(int(parts[0]) * 10000 + int(parts[1]) * 100 + int(parts[2]))
+          ")
+          # Use a precise semver pattern so partial numbers are not matched
+          sed -i '' \
+            "s/MARKETING_VERSION = [0-9][0-9]*\(\.[0-9][0-9]*\)*/MARKETING_VERSION = $VERSION/g" \
+            BrewCap.xcodeproj/project.pbxproj
+          sed -i '' \
+            "s/CURRENT_PROJECT_VERSION = [0-9][0-9]*/CURRENT_PROJECT_VERSION = $BUILD/g" \
+            BrewCap.xcodeproj/project.pbxproj
+          echo "project.pbxproj updated → MARKETING_VERSION=$VERSION, CURRENT_PROJECT_VERSION=$BUILD"
+
+      # ── 5. Build the app ──────────────────────────────────────────────────────
+      - name: Build BrewCap
+        run: |
+          xcodebuild \
+            -project BrewCap.xcodeproj \
+            -scheme BrewCap \
+            -configuration Release \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      # ── 6. Locate the built .app ──────────────────────────────────────────────
+      - name: Locate built app
+        id: app_path
+        run: |
+          APP=$(find build/DerivedData/Build/Products/Release -maxdepth 1 -name "BrewCap.app" | head -1)
+          if [ -z "$APP" ]; then
+            echo "ERROR: BrewCap.app not found after build"
+            exit 1
+          fi
+          echo "APP_PATH=$APP" >> "$GITHUB_OUTPUT"
+          echo "Found app at: $APP"
+
+      # ── 7. Package the app into a DMG ─────────────────────────────────────────
+      - name: Create DMG
+        id: dmg
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          DMG_NAME="BrewCap-${VERSION}.dmg"
+          DMG_PATH="/tmp/${DMG_NAME}"
+          STAGING="/tmp/BrewCapDMGStaging"
+
+          mkdir -p "$STAGING"
+          cp -R "${{ steps.app_path.outputs.APP_PATH }}" "$STAGING/"
+          ln -sf /Applications "$STAGING/Applications"
+
+          hdiutil create \
+            -volname "Install BrewCap" \
+            -srcfolder "$STAGING" \
+            -ov \
+            -format UDZO \
+            "$DMG_PATH"
+
+          echo "DMG_PATH=$DMG_PATH" >> "$GITHUB_OUTPUT"
+          echo "DMG_NAME=$DMG_NAME" >> "$GITHUB_OUTPUT"
+          echo "Created: $DMG_PATH"
+          ls -lh "$DMG_PATH"
+
+      # ── 8. Upload the DMG to the GitHub Release ───────────────────────────────
+      - name: Upload DMG to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload \
+            "${{ steps.version.outputs.TAG }}" \
+            "${{ steps.dmg.outputs.DMG_PATH }}" \
+            --clobber
+          echo "Uploaded ${{ steps.dmg.outputs.DMG_NAME }} to release ${{ steps.version.outputs.TAG }}"

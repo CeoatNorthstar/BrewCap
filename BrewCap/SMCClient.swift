@@ -185,4 +185,18 @@ class SMCClient {
         let firstByte = bytesStr.prefix(2)
         return firstByte == "01"
     }
+
+    // MARK: - MagSafe LED control
+
+    /// Set MagSafe LED to amber (charging paused indicator)
+    @discardableResult
+    static func setLEDAmber() -> Bool {
+        return writeKey("CHIE", hex: "08")
+    }
+
+    /// Set MagSafe LED to green (charging active indicator)
+    @discardableResult
+    static func setLEDGreen() -> Bool {
+        return writeKey("CHIE", hex: "00")
+    }
 }

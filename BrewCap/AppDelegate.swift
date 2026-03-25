@@ -9,6 +9,7 @@ import AppKit
 import Combine
 import SwiftUI
 import Carbon.HIToolbox
+import UserNotifications
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     var statusItem: NSStatusItem!
@@ -30,6 +31,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         updateMenuBarIcon()
         setupMenu()
+
+        // Update checker: set delegate, start periodic background checks
+        UNUserNotificationCenter.current().delegate = self
+        UpdateChecker.shared.startChecking()
+        UpdateChecker.shared.$updateAvailable
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in self?.refreshMenuInfo() }
+            .store(in: &cancellables)
 
         // Battery level observer
         batteryManager.$batteryLevel
@@ -287,6 +296,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             .withSymbolConfiguration(.init(pointSize: 12, weight: .regular))
         menu.addItem(aboutItem)
 
+        // Check for Updates
+        let updateItem = NSMenuItem(title: "Check for Updates…", action: #selector(checkForUpdates), keyEquivalent: "")
+        updateItem.tag = 200
+        updateItem.image = NSImage(systemSymbolName: "arrow.down.circle", accessibilityDescription: nil)?
+            .withSymbolConfiguration(.init(pointSize: 12, weight: .regular))
+        menu.addItem(updateItem)
+
         menu.addItem(NSMenuItem.separator())
 
         let quitItem = NSMenuItem(title: "Quit BrewCap", action: #selector(quitApp), keyEquivalent: "q")
@@ -401,6 +417,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Percentage toggle
         if let percentItem = menu.item(withTag: 108) {
             percentItem.state = batteryManager.showPercentageInMenuBar ? .on : .off
+        }
+
+        // Update available badge
+        if let updateItem = menu.item(withTag: 200) {
+            if UpdateChecker.shared.updateAvailable, let v = UpdateChecker.shared.latestVersion {
+                updateItem.title = "Update Available: v\(v) ↑"
+                updateItem.image = NSImage(systemSymbolName: "arrow.down.circle.fill", accessibilityDescription: nil)?
+                    .withSymbolConfiguration(.init(pointSize: 12, weight: .regular))
+            } else {
+                updateItem.title = "Check for Updates…"
+                updateItem.image = NSImage(systemSymbolName: "arrow.down.circle", accessibilityDescription: nil)?
+                    .withSymbolConfiguration(.init(pointSize: 12, weight: .regular))
+            }
         }
 
         statusItem.button?.toolTip = "BrewCap — \(batteryManager.batteryLevel)%"
@@ -526,7 +555,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let hostingView = NSHostingView(rootView: aboutView)
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 320, height: 320),
+            contentRect: NSRect(x: 0, y: 0, width: 320, height: 360),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
@@ -550,6 +579,45 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         batteryManager.logEvent("BrewCap quit")
         NSApplication.shared.terminate(nil)
     }
+
+    @objc func checkForUpdates() {
+        UpdateChecker.shared.checkForUpdate { available, _ in
+            if available {
+                UpdateChecker.shared.promptUpdate()
+            } else {
+                let alert = NSAlert()
+                alert.messageText     = "You're Up to Date!"
+                alert.informativeText = "BrewCap v\(UpdateChecker.shared.currentVersion) is the latest version."
+                alert.alertStyle      = .informational
+                alert.icon            = NSApp.applicationIconImage
+                alert.addButton(withTitle: "OK")
+                alert.runModal()
+            }
+        }
+    }
+}
+
+// MARK: - UNUserNotificationCenterDelegate
+extension AppDelegate: UNUserNotificationCenterDelegate {
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        if response.notification.request.identifier.hasPrefix("brewcap.update.") {
+            DispatchQueue.main.async { UpdateChecker.shared.promptUpdate() }
+        }
+        completionHandler()
+    }
+
+    /// Show notification banners even while the app is in the foreground.
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.banner, .sound])
+    }
 }
 
 // MARK: - NSWindowDelegate
@@ -569,6 +637,7 @@ extension AppDelegate: NSWindowDelegate {
 // MARK: - About View
 struct AboutView: View {
     @Environment(\.colorScheme) var colorScheme
+    @ObservedObject private var updateChecker = UpdateChecker.shared
 
     var body: some View {
         VStack(spacing: 0) {
@@ -604,6 +673,25 @@ struct AboutView: View {
                 Text("Version \(version) · Build \(build)")
                     .font(.system(size: 11, weight: .medium, design: .monospaced))
                     .foregroundStyle(.secondary)
+
+                // Update badge — visible only when a newer release is available
+                if updateChecker.updateAvailable, let latest = updateChecker.latestVersion {
+                    Button {
+                        updateChecker.promptUpdate()
+                    } label: {
+                        HStack(spacing: 5) {
+                            Image(systemName: "arrow.down.circle.fill")
+                                .font(.system(size: 11, weight: .medium))
+                            Text("Update to v\(latest)")
+                                .font(.system(size: 11, weight: .semibold))
+                        }
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(Color.green, in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
             }
             .padding(.top, 24)
 
@@ -639,7 +727,7 @@ struct AboutView: View {
             }
             .padding(.bottom, 18)
         }
-        .frame(width: 320, height: 320)
+        .frame(width: 320, minHeight: 320)
     }
 
     private func aboutFeatureRow(icon: String, color: Color, text: String) -> some View {

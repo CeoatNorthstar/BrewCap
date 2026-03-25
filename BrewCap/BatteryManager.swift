@@ -599,12 +599,18 @@ class BatteryManager: ObservableObject {
     // MARK: - Feature 28: Sleep/Wake
 
     private func registerSleepWakeNotifications() {
-        NSWorkspace.shared.notificationCenter.addObserver(
-            self,
-            selector: #selector(handleWake),
-            name: NSWorkspace.didWakeNotification,
-            object: nil
-        )
+        let nc = NSWorkspace.shared.notificationCenter
+        nc.addObserver(self, selector: #selector(handleWake),
+                       name: NSWorkspace.didWakeNotification, object: nil)
+        nc.addObserver(self, selector: #selector(handleSleep),
+                       name: NSWorkspace.willSleepNotification, object: nil)
+    }
+
+    @objc private func handleSleep() {
+        // macOS can reset the SMC charging-inhibit (CHTE) key during sleep.
+        // Clear our in-memory flag so that on wake the limit is correctly
+        // enforced when handleSailingCheck runs after the next refresh().
+        chargingInhibited = false
     }
 
     @objc private func handleWake() {
@@ -659,7 +665,8 @@ class BatteryManager: ObservableObject {
     private func handleSailingModeOff() {
         chargingInhibited = false
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            _ = SMCClient.enableCharging()
+            let ok = SMCClient.enableCharging()
+            if ok { SMCClient.setLEDGreen() }
             DispatchQueue.main.async { self?.chargingInhibited = false }
         }
     }
@@ -691,6 +698,7 @@ class BatteryManager: ObservableObject {
         } else if !aboveLimit && chargingInhibited {
             DispatchQueue.global(qos: .userInitiated).async { [weak self] in
                 let ok = SMCClient.enableCharging()
+                if ok { SMCClient.setLEDGreen() }
                 DispatchQueue.main.async { if ok { self?.chargingInhibited = false } }
             }
         }
@@ -704,6 +712,7 @@ class BatteryManager: ObservableObject {
         if aboveLimit {
             DispatchQueue.global(qos: .userInitiated).async { [weak self] in
                 let ok = SMCClient.disableCharging()
+                if ok { SMCClient.setLEDAmber() }
                 DispatchQueue.main.async {
                     self?.chargingInhibited = ok
                     if ok {

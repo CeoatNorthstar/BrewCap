@@ -727,7 +727,8 @@ struct AboutView: View {
             }
             .padding(.bottom, 18)
         }
-        .frame(width: 320, minHeight: 320)
+        .frame(width: 320)
+        .frame(minHeight: 320)
     }
 
     private func aboutFeatureRow(icon: String, color: Color, text: String) -> some View {
@@ -743,4 +744,3 @@ struct AboutView: View {
         }
     }
 }
-

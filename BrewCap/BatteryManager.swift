@@ -197,6 +197,12 @@ class BatteryManager: ObservableObject {
     private var timer: Timer?
     private var hasNotifiedForCurrentCharge = false
 
+    /// IOKit power source notification run loop source (fires on plug/unplug even during darkwake)
+    private var powerSourceRunLoopSource: CFRunLoopSource?
+
+    /// Background activity token for Power Nap periodic checks
+    private var backgroundActivity: NSObjectProtocol?
+
     // MARK: - Init
 
     init() {
@@ -266,6 +272,8 @@ class BatteryManager: ObservableObject {
         startMonitoring()
         requestNotificationPermission()
         registerSleepWakeNotifications()
+        registerPowerSourceNotification()
+        startBackgroundActivity()
         startSnapshotTimer() // Feature 54
 
         self.sailingModeEnabled = savedSailing
@@ -284,6 +292,9 @@ class BatteryManager: ObservableObject {
         timer?.invalidate()
         sessionTimer?.invalidate()
         snapshotTimer?.invalidate()
+        if let source = powerSourceRunLoopSource {
+            CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .defaultMode)
+        }
     }
 
     // MARK: - Monitoring
@@ -362,7 +373,7 @@ class BatteryManager: ObservableObject {
                 self.sailingModeEnabled = false
                 self.logEvent("Sailing Mode auto-disabled — battery below 20%")
                 self.sendNotification(
-                    title: "⚠️ BrewCap — Sailing Mode Paused",
+                    title: "BrewCap — Sailing Mode Paused",
                     body: "Battery below 20%. Sailing Mode disabled to preserve charge."
                 )
             }
@@ -552,7 +563,7 @@ class BatteryManager: ObservableObject {
             hasNotifiedTempAlert = true
             logEvent("Temperature alert: \(String(format: "%.1f°C", temperature))")
             sendNotification(
-                title: "🌡 BrewCap — High Temperature",
+                title: "BrewCap — High Temperature",
                 body: "Battery temperature is \(String(format: "%.1f°C", temperature)). Threshold: \(Int(tempAlertThreshold))°C."
             )
         }
@@ -564,7 +575,7 @@ class BatteryManager: ObservableObject {
             hasNotifiedLowBattery = true
             logEvent("Low battery warning: \(batteryLevel)%")
             sendNotification(
-                title: "🪫 BrewCap — Low Battery",
+                title: "BrewCap — Low Battery",
                 body: "Battery at \(batteryLevel)%. Consider plugging in your charger."
             )
         }
@@ -577,7 +588,7 @@ class BatteryManager: ObservableObject {
             hasNotifiedFullCharge = true
             logEvent("Battery fully charged")
             sendNotification(
-                title: "🔋 BrewCap — Fully Charged",
+                title: "BrewCap — Fully Charged",
                 body: "Battery is at 100%. You can unplug your charger."
             )
         }
@@ -589,14 +600,14 @@ class BatteryManager: ObservableObject {
             hasNotifiedCriticalTemp = true
             logEvent("CRITICAL temperature: \(String(format: "%.1f°C", temperature))")
             sendNotification(
-                title: "🔥 BrewCap — CRITICAL TEMPERATURE",
+                title: "BrewCap — Critical Temperature",
                 body: "Battery at \(String(format: "%.1f°C", temperature))! This may damage your battery. Close intensive apps."
             )
         }
         if temperature < 42 { hasNotifiedCriticalTemp = false }
     }
 
-    // MARK: - Feature 28: Sleep/Wake
+    // MARK: - Feature 28: Sleep/Wake & Lid-Closed Charging Protection
 
     private func registerSleepWakeNotifications() {
         let nc = NSWorkspace.shared.notificationCenter
@@ -606,11 +617,58 @@ class BatteryManager: ObservableObject {
                        name: NSWorkspace.willSleepNotification, object: nil)
     }
 
+    /// Register for IOKit power source change notifications.
+    /// These fire during "darkwake" — the brief system wake that occurs when
+    /// the charger is plugged in or removed while the lid is closed.
+    /// This lets us re-apply the charge limit without waiting for a full wake.
+    private func registerPowerSourceNotification() {
+        let context = Unmanaged.passUnretained(self).toOpaque()
+        if let source = IOPSNotificationCreateRunLoopSource({ context in
+            guard let context = context else { return }
+            let manager = Unmanaged<BatteryManager>.fromOpaque(context).takeUnretainedValue()
+            manager.handlePowerSourceChange()
+        }, context)?.takeRetainedValue() {
+            powerSourceRunLoopSource = source
+            CFRunLoopAddSource(CFRunLoopGetMain(), source, .defaultMode)
+        }
+    }
+
+    /// Called when the power source changes (plug/unplug), including during darkwake
+    /// with the lid closed. Re-reads battery state and re-applies the charge limit.
+    private func handlePowerSourceChange() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
+            guard let self = self else { return }
+            self.refresh()
+            if self.sailingModeEnabled {
+                self.applyChargingControl()
+            }
+        }
+    }
+
+    /// Use NSProcessInfo background activity to keep the process eligible for
+    /// Power Nap maintenance wakes. This lets the existing Timer fire during
+    /// sleep so the charge limit gets re-enforced while the lid is closed.
+    private func startBackgroundActivity() {
+        backgroundActivity = ProcessInfo.processInfo.beginActivity(
+            options: [.background, .suddenTerminationDisabled],
+            reason: "BrewCap charge limit enforcement"
+        )
+    }
+
     @objc private func handleSleep() {
         // macOS can reset the SMC charging-inhibit (CHTE) key during sleep.
-        // Clear our in-memory flag so that on wake the limit is correctly
-        // enforced when handleSailingCheck runs after the next refresh().
+        // Clear our in-memory flag so charging control is re-applied on the
+        // next wake or darkwake power-source event.
         chargingInhibited = false
+
+        // Pre-emptively re-inhibit charging right before sleep if sailing mode
+        // is active and we're above the limit. This gives us the best chance
+        // of the inhibit surviving the transition into sleep.
+        if sailingModeEnabled && isPluggedIn && batteryLevel >= Int(chargeLimit) {
+            DispatchQueue.global(qos: .userInitiated).async {
+                _ = SMCClient.disableCharging()
+            }
+        }
     }
 
     @objc private func handleWake() {
@@ -718,7 +776,7 @@ class BatteryManager: ObservableObject {
                     if ok {
                         self?.logEvent("Charging paused at \(self?.batteryLevel ?? 0)%")
                         self?.sendNotification(
-                            title: "☕ BrewCap — Charging Paused",
+                            title: "BrewCap — Charging Paused",
                             body: "Battery at \(self?.batteryLevel ?? 0)%. Limit is \(limit)%."
                         )
                     }
@@ -732,7 +790,7 @@ class BatteryManager: ObservableObject {
         if batteryLevel >= limit && isPluggedIn && !hasNotifiedForCurrentCharge {
             hasNotifiedForCurrentCharge = true
             sendNotification(
-                title: "☕ BrewCap — Charge Limit Reached",
+                title: "BrewCap — Charge Limit Reached",
                 body: "Battery at \(batteryLevel)%. Limit is \(limit)%. Please unplug your charger."
             )
         }
@@ -862,7 +920,18 @@ class BatteryManager: ObservableObject {
     }
 
     private func requestNotificationPermission() {
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in }
+        // Delay permission request slightly so the app is fully initialized.
+        // Accessory-policy apps can miss the system dialog if it fires too early.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+                if let error = error {
+                    print("BrewCap: Notification permission error: \(error)")
+                }
+                if !granted {
+                    print("BrewCap: Notification permission not granted")
+                }
+            }
+        }
     }
 
     // MARK: - IOKit Battery Reading

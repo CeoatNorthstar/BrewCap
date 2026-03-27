@@ -72,7 +72,8 @@ struct ReportGenerator {
         }
 
         lines.append("═══════════════════════════════════════")
-        lines.append("  Report by BrewCap v1.0")
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.5"
+        lines.append("  Report by BrewCap v\(version)")
         lines.append("═══════════════════════════════════════")
 
         return lines.joined(separator: "\n")

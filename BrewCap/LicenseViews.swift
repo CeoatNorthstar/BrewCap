@@ -515,7 +515,12 @@ struct GumroadCheckoutView: NSViewRepresentable {
         webView.navigationDelegate = context.coordinator
         
         // Load Gumroad overlay checkout
-        let overlayURL = productURL + "?wanted=true"
+        let overlayURL: String
+        if productURL.contains("?") {
+            overlayURL = productURL + "&wanted=true"
+        } else {
+            overlayURL = productURL + "?wanted=true"
+        }
         if let url = URL(string: overlayURL) {
             webView.load(URLRequest(url: url))
         }

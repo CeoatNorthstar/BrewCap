@@ -163,6 +163,8 @@ struct UpgradeDetailView: View {
     @StateObject private var licenseManager = LicenseManager.shared
     @State private var selectedPlan: Plan? = nil
     @State private var licenseKey = ""
+    @State private var promoCode = ""
+    @State private var showPromoField = false
     @State private var isActivating = false
     @State private var showCheckout = false
     @State private var errorMessage: String?
@@ -231,6 +233,42 @@ struct UpgradeDetailView: View {
                     }
                 }
                 .padding(.horizontal, 24)
+                
+                // Promo code section
+                VStack(spacing: 8) {
+                    if showPromoField {
+                        HStack(spacing: 8) {
+                            TextField("Promo code", text: $promoCode)
+                                .textFieldStyle(.roundedBorder)
+                                .font(.system(.body, design: .monospaced))
+                                .frame(width: 160)
+                                .textCase(.uppercase)
+                            
+                            Button {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    showPromoField = false
+                                    promoCode = ""
+                                }
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundStyle(.secondary)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                    } else {
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                showPromoField = true
+                            }
+                        } label: {
+                            Text("Have a promo code?")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
                 
                 // Continue button
                 if selectedPlan != nil {
@@ -315,7 +353,7 @@ struct UpgradeDetailView: View {
         .navigationTitle("Upgrade")
         .sheet(isPresented: $showCheckout) {
             if let plan = selectedPlan {
-                CheckoutView(plan: plan) {
+                CheckoutView(plan: plan, promoCode: promoCode.isEmpty ? nil : promoCode.uppercased()) {
                     showCheckout = false
                     onComplete()
                 }
@@ -409,13 +447,18 @@ struct FeatureItem: View {
 
 struct CheckoutView: View {
     let plan: UpgradeDetailView.Plan
+    var promoCode: String? = nil
     var onComplete: () -> Void
     @Environment(\.dismiss) private var dismiss
     @StateObject private var licenseManager = LicenseManager.shared
     @State private var isLoading = true
     
     private var checkoutURL: String {
-        "https://axionceo.gumroad.com/l/BREWCAP_PRO"
+        var url = "https://axionceo.gumroad.com/l/BREWCAP_PRO"
+        if let code = promoCode, !code.isEmpty {
+            url += "?code=\(code)"
+        }
+        return url
     }
     
     var body: some View {

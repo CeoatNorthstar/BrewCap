@@ -309,7 +309,7 @@ E4945DFDB4BD47978D888057 /* LicenseManager.swift */,
 				CODE_SIGN_ENTITLEMENTS = BrewCap/BrewCap.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = BrewCap/Info.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -319,7 +319,7 @@ E4945DFDB4BD47978D888057 /* LicenseManager.swift */,
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.5.7;
+				MARKETING_VERSION = 1.5.8;
 				PRODUCT_BUNDLE_IDENTIFIER = com.brewcap.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -336,7 +336,7 @@ E4945DFDB4BD47978D888057 /* LicenseManager.swift */,
 				CODE_SIGN_ENTITLEMENTS = BrewCap/BrewCap.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = BrewCap/Info.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -346,7 +346,7 @@ E4945DFDB4BD47978D888057 /* LicenseManager.swift */,
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.5.7;
+				MARKETING_VERSION = 1.5.8;
 				PRODUCT_BUNDLE_IDENTIFIER = com.brewcap.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;

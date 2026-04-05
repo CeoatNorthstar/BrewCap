@@ -10,12 +10,14 @@ import Combine
 import SwiftUI
 import UserNotifications
 
+@MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
     var statusItem: NSStatusItem!
     var mainWindow: NSWindow?
     var aboutWindow: NSWindow?
     var settingsWindow: NSWindow?
     let batteryManager = BatteryManager()
+    var menuPopover: NSPopover?
 
     // Feature 27: Global Hotkey
     private var globalHotkeyMonitor: Any?
@@ -27,7 +29,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         updateMenuBarIcon()
-        setupMenu()
+        setupGlassMenu()
 
         // Update checker: set delegate, start periodic background checks
         UNUserNotificationCenter.current().delegate = self
@@ -143,8 +145,54 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         button.toolTip = tip
     }
 
-    // MARK: - Menu Setup
-
+    // MARK: - Glass Menu Setup
+    
+    private func setupGlassMenu() {
+        if let button = statusItem.button {
+            button.action = #selector(toggleGlassMenu)
+            button.target = self
+        }
+        
+        // Create popover
+        let popover = NSPopover()
+        popover.behavior = .transient
+        popover.contentSize = NSSize(width: 280, height: 600)
+        
+        let menuView = GlassMenuView(
+            batteryManager: batteryManager,
+            updateChecker: UpdateChecker.shared,
+            onOpenMain: { [weak self] in self?.openMainWindow() },
+            onExportReport: { [weak self] in self?.exportReport() },
+            onCopyStats: { [weak self] in self?.copyStats() },
+            onShowAbout: { [weak self] in self?.showAbout() },
+            onCheckUpdates: { [weak self] in self?.checkForUpdates() },
+            onQuit: { [weak self] in self?.quitApp() },
+            onClose: { [weak self] in self?.closeGlassMenu() },
+            onUpgrade: { [weak self] in self?.openMainWindowToUpgrade() }
+        )
+        
+        let hostingController = NSHostingController(rootView: menuView)
+        popover.contentViewController = hostingController
+        
+        self.menuPopover = popover
+    }
+    
+    @objc private func toggleGlassMenu() {
+        guard let button = statusItem.button else { return }
+        
+        if let popover = menuPopover, popover.isShown {
+            popover.performClose(nil)
+        } else {
+            menuPopover?.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        }
+    }
+    
+    private func closeGlassMenu() {
+        menuPopover?.performClose(nil)
+    }
+    
+    // MARK: - Old Menu Setup (Keeping for reference, can be removed)
+    
     private func setupMenu() {
         let menu = NSMenu()
         menu.autoenablesItems = false
@@ -275,11 +323,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Sailing Mode
         if let item = menu.item(withTag: 200) {
-            item.state = batteryManager.sailingModeEnabled ? .on : .off
-            if batteryManager.sailingModeEnabled {
-                item.title = "Sailing Mode — Limit: \(Int(batteryManager.chargeLimit))%"
+            // Check if Pro license - use currentTier which is published
+            let isPro = LicenseManager.shared.currentTier == .pro
+            if isPro {
+                item.state = batteryManager.sailingModeEnabled ? .on : .off
+                if batteryManager.sailingModeEnabled {
+                    item.title = "Sailing Mode — Limit: \(Int(batteryManager.chargeLimit))%"
+                } else {
+                    item.title = "Sailing Mode"
+                }
             } else {
-                item.title = "Sailing Mode"
+                item.state = .off
+                item.title = "Sailing Mode (Pro)"
             }
         }
 
@@ -301,14 +356,33 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Menu Actions
 
     @objc func toggleSailingMode() {
-        batteryManager.sailingModeEnabled.toggle()
-        refreshMenuInfo()
+        // Check license before allowing toggle
+        Task { @MainActor in
+            if LicenseManager.shared.hasAccess(to: .sailingMode) {
+                batteryManager.sailingModeEnabled.toggle()
+            } else {
+                // Open main window and go to upgrade tab
+                openMainWindowToUpgrade()
+            }
+        }
+    }
+    
+    private func openMainWindowToUpgrade() {
+        // Close the popover first
+        menuPopover?.close()
+        
+        // Open main window - the upgrade tab will be visible for free users
+        openMainWindow()
+        
+        // Post notification to navigate to upgrade tab
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            NotificationCenter.default.post(name: .navigateToUpgrade, object: nil)
+        }
     }
 
     @objc func togglePercentage() {
         batteryManager.showPercentageInMenuBar.toggle()
         updateMenuBarIcon()
-        refreshMenuInfo()
     }
 
     @objc func exportReport() {
@@ -333,8 +407,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let hostingView = NSHostingView(rootView: contentView)
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 680, height: 440),
-            styleMask: [.titled, .closable, .miniaturizable],
+            contentRect: NSRect(x: 0, y: 0, width: 750, height: 500),
+            styleMask: [.titled, .closable, .miniaturizable, .resizable],
             backing: .buffered,
             defer: false
         )
@@ -343,6 +417,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         window.center()
         window.isReleasedWhenClosed = false
         window.delegate = self
+        window.setFrameAutosaveName("MainWindow")
+        window.minSize = NSSize(width: 650, height: 450)
 
         self.mainWindow = window
         window.makeKeyAndOrderFront(nil)
@@ -362,12 +438,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let hostingView = NSHostingView(rootView: aboutView)
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 300, height: 200),
-            styleMask: [.titled, .closable],
+            contentRect: NSRect(x: 0, y: 0, width: 340, height: 260),
+            styleMask: [.titled, .closable, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
         window.title = "About BrewCap"
+        window.titlebarAppearsTransparent = true
+        window.titleVisibility = .hidden
+        window.backgroundColor = .clear
+        window.isOpaque = false
         window.contentView = hostingView
         window.center()
         window.isReleasedWhenClosed = false
@@ -391,12 +471,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let hostingView = NSHostingView(rootView: settingsView)
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 520, height: 560),
-            styleMask: [.titled, .closable],
+            contentRect: NSRect(x: 0, y: 0, width: 560, height: 600),
+            styleMask: [.titled, .closable, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
         window.title = "BrewCap Settings"
+        window.titlebarAppearsTransparent = true
+        window.titleVisibility = .hidden
+        window.backgroundColor = .clear
+        window.isOpaque = false
         window.contentView = hostingView
         window.center()
         window.isReleasedWhenClosed = false
@@ -472,13 +556,15 @@ extension AppDelegate: NSWindowDelegate {
 
 struct AboutView: View {
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 16) {
             Image(nsImage: NSApp.applicationIconImage)
                 .resizable()
                 .frame(width: 64, height: 64)
+                .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
 
             Text("BrewCap")
-                .font(.system(size: 15, weight: .bold))
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(.primary)
 
             let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.5"
             let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "2"
@@ -491,7 +577,10 @@ struct AboutView: View {
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
         }
-        .padding(24)
+        .padding(32)
         .frame(width: 300)
+        .floatingGlass(padding: 24, cornerRadius: 20)
+        .padding(20)
+        .glassWindowBackground()
     }
 }

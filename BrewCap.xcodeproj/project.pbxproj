@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		87DA063C881F4CA5B61996EB /* GlassEffects.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B764C145C8148BCACF69633 /* GlassEffects.swift */; };
+		94C4A971B98D42938BD7E8D9 /* GlassMenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5EDC7B0900E43279767E700 /* GlassMenuView.swift */; };
 		A11C1001AAAA000100000001 /* BrewCapApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11C1002AAAA000100000001 /* BrewCapApp.swift */; };
 		A11C1003AAAA000100000001 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11C1004AAAA000100000001 /* AppDelegate.swift */; };
 		A11C1005AAAA000100000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A11C1006AAAA000100000001 /* Assets.xcassets */; };
@@ -18,9 +20,13 @@
 		A11C1032AAAA000100000001 /* AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = A11C1033AAAA000100000001 /* AppIcon.icns */; };
 		A11C1034AAAA000100000001 /* ReportGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11C1035AAAA000100000001 /* ReportGenerator.swift */; };
 		A11C1036AAAA000100000001 /* UpdateChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11C1037AAAA000100000001 /* UpdateChecker.swift */; };
+		4FA899AF588F46C2B8920740 /* LicenseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4945DFDB4BD47978D888057 /* LicenseManager.swift */; };
+		EDB1AEBD07204A78A7FEC277 /* LicenseViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E527D503BD40FB98122E70 /* LicenseViews.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		6B764C145C8148BCACF69633 /* GlassEffects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassEffects.swift; sourceTree = "<group>"; };
+		C5EDC7B0900E43279767E700 /* GlassMenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassMenuView.swift; sourceTree = "<group>"; };
 		A11C1002AAAA000100000001 /* BrewCapApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrewCapApp.swift; sourceTree = "<group>"; };
 		A11C1004AAAA000100000001 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		A11C1006AAAA000100000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -35,6 +41,8 @@
 		A11C1033AAAA000100000001 /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
 		A11C1035AAAA000100000001 /* ReportGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportGenerator.swift; sourceTree = "<group>"; };
 		A11C1037AAAA000100000001 /* UpdateChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateChecker.swift; sourceTree = "<group>"; };
+		E4945DFDB4BD47978D888057 /* LicenseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LicenseManager.swift; sourceTree = "<group>"; };
+		98E527D503BD40FB98122E70 /* LicenseViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LicenseViews.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -72,7 +80,11 @@
 				A11C1033AAAA000100000001 /* AppIcon.icns */,
 				A11C1035AAAA000100000001 /* ReportGenerator.swift */,
 				A11C1037AAAA000100000001 /* UpdateChecker.swift */,
-			);
+			
+				6B764C145C8148BCACF69633 /* GlassEffects.swift */,
+				C5EDC7B0900E43279767E700 /* GlassMenuView.swift */,
+E4945DFDB4BD47978D888057 /* LicenseManager.swift */,
+98E527D503BD40FB98122E70 /* LicenseViews.swift */,);
 			path = BrewCap;
 			sourceTree = "<group>";
 		};
@@ -163,7 +175,11 @@
 				A11C101EAAAA000100000001 /* main.swift in Sources */,
 				A11C1034AAAA000100000001 /* ReportGenerator.swift in Sources */,
 				A11C1036AAAA000100000001 /* UpdateChecker.swift in Sources */,
-			);
+			
+				87DA063C881F4CA5B61996EB /* GlassEffects.swift in Sources */,
+				94C4A971B98D42938BD7E8D9 /* GlassMenuView.swift in Sources */,
+				4FA899AF588F46C2B8920740 /* LicenseManager.swift in Sources */,
+				EDB1AEBD07204A78A7FEC277 /* LicenseViews.swift in Sources */);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
@@ -293,7 +309,7 @@
 				CODE_SIGN_ENTITLEMENTS = BrewCap/BrewCap.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 7;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = BrewCap/Info.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -303,7 +319,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.5;
+				MARKETING_VERSION = 1.5.7;
 				PRODUCT_BUNDLE_IDENTIFIER = com.brewcap.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -320,7 +336,7 @@
 				CODE_SIGN_ENTITLEMENTS = BrewCap/BrewCap.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 7;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = BrewCap/Info.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -330,7 +346,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.5;
+				MARKETING_VERSION = 1.5.7;
 				PRODUCT_BUNDLE_IDENTIFIER = com.brewcap.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
